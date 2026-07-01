@@ -17,6 +17,7 @@ class PropertiesPanel(ttk.Frame):
     """
 
     def __init__(self, parent, on_apply_callback: Optional[Callable] = None):
+        """Initialize the properties panel and build its widgets."""
         super().__init__(parent, padding=10)
         self.on_apply_callback = on_apply_callback
         self.current_shape: Optional[Shape] = None
@@ -28,6 +29,7 @@ class PropertiesPanel(ttk.Frame):
         self._create_widgets()
 
     def _create_widgets(self):
+        """Create the title, properties frame, apply button and empty label."""
         # Title
         title = ttk.Label(self, text="Properties", font=("Arial", 12, "bold"))
         title.grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 10))
@@ -311,9 +313,10 @@ class PropertiesPanel(ttk.Frame):
             self.properties_frame.config(text="Action Properties")
             self._load_action_properties(shape)
         else:
-            # Arrow or unknown type - show minimal properties
+            # Arrow or unknown type - no editable properties, so hide Apply button
             self._clear_dynamic_fields()
             self.properties_frame.config(text="Properties")
+            self.apply_button.grid_remove()
 
     def _on_apply(self):
         """Apply changes to the shape."""
