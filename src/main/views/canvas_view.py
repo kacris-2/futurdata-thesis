@@ -8,6 +8,10 @@ from ..utils.geometry import get_arrow_points
 
 
 class DiagramCanvas(tk.Canvas):
+    """
+    A specialized Tkinter Canvas workspace customized for rendering, scaling,
+    and interacting with graph diagram models such as boxes, actions, and connectives.
+    """
     GRID_SIZE = 50
     GRID_COLOR = "#e0e0e0"
     SELECT_COLOR = "#667eea"
@@ -22,6 +26,14 @@ class DiagramCanvas(tk.Canvas):
     EXPANSION_MARGIN = 500
 
     def __init__(self, parent, **kwargs):
+        """
+        Initializes the diagram workspace viewport panel, establishing bounding configurations,
+        tracking flags, alignment matrix properties, and base grid structures.
+
+        Args:
+            parent (any): The parent Tkinter container view nesting this widget.
+            **kwargs: Dictated configuration attributes passed directly to the tk.Canvas base.
+        """
         kwargs.setdefault('bg', 'white')
         kwargs.setdefault('highlightthickness', 0)
         super().__init__(parent, **kwargs)
@@ -36,7 +48,7 @@ class DiagramCanvas(tk.Canvas):
         self.diagram = None
 
     def expand_canvas_if_needed(self, x: float, y: float, margin: float = 100, redraw_grid: bool = False) -> bool:
-        """Expand canvas if point is near the edge. Returns True if expanded."""
+        """Expands canvas if point is near the edge. Returns True if expanded."""
         expanded = False
 
         # Check if we need to expand width
@@ -89,7 +101,7 @@ class DiagramCanvas(tk.Canvas):
         Scroll canvas to make shape visible in viewport.
         
         Args:
-            shape: Shape to scroll to
+            shape: Shape to scroll to.
         """
         if not shape:
             return
@@ -141,7 +153,7 @@ class DiagramCanvas(tk.Canvas):
         self.yview_moveto(y_fraction)
 
     def update_scroll_region_from_shapes(self, shapes) -> None:
-        """Update scroll region to encompass all shapes with padding."""
+        """Updates scroll region to encompass all shapes with padding."""
         if not shapes:
             self.canvas_width = self.MIN_CANVAS_WIDTH
             self.canvas_height = self.MIN_CANVAS_HEIGHT
@@ -155,6 +167,7 @@ class DiagramCanvas(tk.Canvas):
         self.draw_grid()
 
     def draw_grid(self):
+        """Renders the grid overlay pattern onto the canvas background using default constants."""
         if not self.show_grid:
             return
         x1, y1 = 0, 0
@@ -167,6 +180,13 @@ class DiagramCanvas(tk.Canvas):
         self.tag_lower("grid")
 
     def draw_shape(self, shape: Shape) -> None:
+        """
+        Clears existing instances of a shape model from the canvas and triggers 
+        the appropriate specialized drawing routine based on its class type.
+
+        Args:
+            shape (Shape): The concrete instance model element requiring drawing.
+        """
         if shape.shape_id is not None:
             self.delete(shape.shape_id)
         if shape.text_id is not None:
@@ -185,6 +205,12 @@ class DiagramCanvas(tk.Canvas):
             self._draw_selection(shape)
 
     def _draw_action_circle(self, shape: ActionCircle):
+        """
+        Generates graphical oval lines and internal metadata labels for an ActionCircle shape.
+
+        Args:
+            shape (ActionCircle): The target action model entity.
+        """
         x1, y1, x2, y2 = shape.get_bounds()
         border_width = 3 if shape.selected else 2
         border_color = self.SELECT_COLOR if shape.selected else self.BORDER_COLOR
@@ -197,6 +223,12 @@ class DiagramCanvas(tk.Canvas):
         )
 
     def _draw_diamond_step(self, shape: DiamondStep):
+        """
+        Generates diamond polygon outlines and text tags for a DiamondStep shape.
+
+        Args:
+            shape (DiamondStep): The target diamond step element.
+        """
         half = shape.SIZE / 2
         points = [
             shape.x, shape.y - half,
@@ -215,6 +247,12 @@ class DiagramCanvas(tk.Canvas):
         )
 
     def _draw_component_box(self, shape: ComponentBox):
+        """
+        Generates rectangular block segments and reads optional database schema color configurations.
+
+        Args:
+            shape (ComponentBox): The target material component element box.
+        """
         x1, y1, x2, y2 = shape.get_bounds()
         border_width = 3 if shape.selected else 2
         border_color = self.SELECT_COLOR if shape.selected else self.BORDER_COLOR
@@ -232,6 +270,12 @@ class DiagramCanvas(tk.Canvas):
         )
 
     def _draw_arrow_shape(self, shape: ArrowShape):
+        """
+        Draws dynamic connecting arrow lines between elements.
+
+        Args:
+            shape (ArrowShape): The vector arrow shape structure to render.
+        """
         if shape.from_shape and shape.to_shape:
             shape.update_from_shapes()
         end_x = shape.end_x
@@ -248,6 +292,12 @@ class DiagramCanvas(tk.Canvas):
         pass
 
     def draw_connection(self, connection: Connection) -> None:
+        """
+        Renders directional edge tracking line lines across shape model endpoint pairs.
+
+        Args:
+            connection (Connection): The connection model entity configuration.
+        """
         if connection.arrow_id is not None:
             self.delete(connection.arrow_id)
         (x1, y1), (x2, y2) = connection.get_endpoints()
@@ -259,6 +309,12 @@ class DiagramCanvas(tk.Canvas):
         self.tag_lower("connection", "shape")
 
     def draw_alignment_guides(self, guides: dict):
+        """
+        Renders temporary horizontal and vertical alignment guides to assist in layout placement.
+
+        Args:
+            guides (dict): Alignment tracker dictionary specifying matching coordinates ('vertical', 'horizontal').
+        """
         self.delete("guide")
         for x in guides.get('vertical', []):
             self.create_line(x, 0, x, self.canvas_height, fill=self.GUIDE_COLOR, width=1, dash=(4, 4), tags="guide")
@@ -266,9 +322,11 @@ class DiagramCanvas(tk.Canvas):
             self.create_line(0, y, self.canvas_width, y, fill=self.GUIDE_COLOR, width=1, dash=(4, 4), tags="guide")
 
     def clear_alignment_guides(self):
+        """Flushes and deletes all temporary alignment indicator lines from the active canvas layer."""
         self.delete("guide")
 
     def clear_canvas(self):
+        """Removes core visual entities including shapes, text strings, linkages, and alignment markers."""
         self.delete("shape")
         self.delete("shape_text")
         self.delete("connection")
@@ -306,9 +364,21 @@ class DiagramCanvas(tk.Canvas):
 
 
     def update_shape(self, shape: Shape):
+        """
+        Forces a targeted individual redraw of a specific shape model on the canvas.
+
+        Args:
+            shape (Shape): The object instance that requires updating.
+        """
         self.draw_shape(shape)
 
     def update_connection(self, connection: Connection):
+        """
+        Forces a targeted individual redraw of a specific vector connection wire line.
+
+        Args:
+            connection (Connection): The configuration connector segment requiring re-routing.
+        """
         self.draw_connection(connection)
 
     def move_items(self, shape: Shape, dx: float, dy: float):
@@ -325,6 +395,7 @@ class DiagramCanvas(tk.Canvas):
                 self.draw_connection(conn)
 
     def toggle_grid(self):
+        """Toggles the grid overlay visibility status and triggers appropriate layout redraws."""
         self.show_grid = not self.show_grid
         if self.show_grid:
             self.draw_grid()
@@ -332,15 +403,11 @@ class DiagramCanvas(tk.Canvas):
             self.delete("grid")
 
     def zoom_in(self):
-        """
-        Increases the current zoom level by scaling all objects up by 10% .
-        """
+        """Increases the current zoom level by scaling all objects up by 10% ."""
         self._apply_zoom(1.1)
 
     def zoom_out(self):
-        """
-        Decreases the current zoom level by scaling all objects down by 10% .
-        """
+        """Decreases the current zoom level by scaling all objects down by 10% ."""
         self._apply_zoom(0.9)
 
     def reset_zoom(self):
